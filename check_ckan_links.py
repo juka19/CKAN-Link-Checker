@@ -19,6 +19,11 @@ import urllib3
 from datetime import datetime
 from urlparse import urlparse
 
+if sys.stdout.encoding != 'cp850': # solves unicode issues
+  sys.stdout = codecs.getwriter('cp850')(sys.stdout, 'strict')
+if sys.stderr.encoding != 'cp850':
+  sys.stderr = codecs.getwriter('cp850')(sys.stderr, 'strict')
+
 # Class to write unicode CSVs (taken from
 # https://docs.python.org/2/library/csv.html#examples)
 class UnicodeWriter:
@@ -97,7 +102,7 @@ parsed_endpoint = urlparse(endpoint)
 # Create folders to save the results in
 folder_name = 'results_%s_%s' % (
         parsed_endpoint[1],
-        datetime.now().strftime('%Y-%m-%d_%H:%M:%S')
+        datetime.now().strftime('%Y-%m-%d_%H-%M-%S') # valid windows path
     )
 if not os.path.exists(folder_name):
     os.mkdir(folder_name)
@@ -164,7 +169,10 @@ with open('packages.csv', 'w') as ALL_OUT:
         else:
             json.dump(rjson['result'], OUT, indent=4)
             package = rjson['result']
-            num_resources = package['num_resources']
+            try: # hacky way to handle the fact this will throw an error with harvested resources
+                num_resources = package['num_resources']
+            except KeyError:
+                continue
             dataset_id = package['id']
             dataset_maintainer = package['maintainer']
             if not dataset_maintainer:
